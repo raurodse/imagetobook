@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 import os
+import argparse
 '''Inch = 25.4
 cantidad , unidades = sys.argv[1].split(" ")
 
@@ -9,7 +10,7 @@ if ( unidades == "PixelsPerInch"):
 else:
   print ((float(cantidad) / 10)*210)
 '''
-a = (os.listdir(sys.argv[1]))
+'''a = (os.listdir(sys.argv[1]))
 paginas = int(sys.argv[2]) * 4
 a.sort()
 contador = int(len(a) / paginas)
@@ -33,5 +34,7 @@ for i in range(0,contador+1):
 			lista.append(miniarray[indice])
 			lista.append(miniarray[len(miniarray) - indice - 1])
 	print (lista)
-	
-	
+'''	
+parser = argparse.ArgumentParser(prog="imagetobook",description="This a tool for convert images in book for print")
+parser.add_argument('integer',type=int,nargs='+',help="test")
+args = parser.parse_args()
