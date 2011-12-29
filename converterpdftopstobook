@@ -1,0 +1,130 @@
+#!/bin/sh
+# Author: Angel Berlanas Vicente
+# This script is licensed under GPL v3 or higher
+
+# Some temporal values
+TRANSFIGURATION_DIRECTORY="$(mktemp -d /tmp/pdfbooklet.XXXXX)"
+FINAL_PDF="book_output.pdf"
+JAPAN_ORDER=""
+USE_THE_FORCE=""
+DEFAULT_NUM_PAGES="-s16"
+
+_sanity_checks()
+{
+	which pdftk || $(echo "pdftk seems to be not installed, please run: sudo apt-get install pdftk"; exit 1)
+	which convert || $(echo "convert seems to be not installed, please run: sudo apt-get install imagemagick"; exit 1)
+}
+
+_usage()
+{
+	echo "pdfbooklet.sh --book FILE_TO_PARSE [--num-pages NUM [8,16,24,...]]"
+	echo "pdfbooklet.sh --target FINAL_PDF.pdf [--japan-order][--use-the-force] --png FILE1.png FILE2.png .."
+	exit 1
+}
+
+_clean_booklet()
+{
+	echo "Cleaning area"
+	rm "$FILE_TO_PARSE.ps"
+	rm "$FILE_TO_PARSE.A5.ps"
+}
+
+_booklet()
+{	
+	FILE_TO_PARSE="$1"
+	shift
+	if [ $1 = "--num-pages" ] ; then
+		shift
+		DEFAULT_NUM_PAGES="-s$1"
+	fi
+	pdftops "$FILE_TO_PARSE" "$FILE_TO_PARSE.ps"
+	psbook "$DEFAULT_NUM_PAGES" "$FILE_TO_PARSE.ps" | psnup -pa4 -l -2 > "$FILE_TO_PARSE.A5.ps"
+	ps2pdf "$FILE_TO_PARSE.A5.ps" "$FILE_TO_PARSE.A5.pdf"
+}
+
+_process_single_image()
+{
+	echo "Processing $1"
+	if [ $USE_THE_FORCE = "yes" ] ; then
+		echo "using the force"
+		cp $2 $TRANSFIGURATION_DIRECTORY/
+	else
+		convert -define png:compression-level=9 -define png:compression-filter=0 -define ps:imagemask $2 eps2:$TRANSFIGURATION_DIRECTORY/$(basename "$2").eps
+	fi
+}
+
+_process_images()
+{
+	echo "Processing files"	
+	TOTAL_NUMBER="$#"
+	CURRENT=0
+	for f in $@ ; do
+		CURRENT=$(($CURRENT+1))
+		_process_single_image "$CURRENT.of.$TOTAL_NUMBER" "$f"
+	done	
+}
+
+_process_directory()
+{
+	echo "Process transfiguration directory"
+	
+	if [ "$USE_THE_FORCE" = "yes" ] ; then
+		if [ "$JAPAN_ORDER" = "yes" ] ; then
+        	        convert $(ls -1 $TRANSFIGURATION_DIRECTORY/*.png|tac) $FINAL_PDF
+	        else
+        	        convert $(ls -1 $TRANSFIGURATION_DIRECTORY/*.png) $FINAL_PDF
+	        fi	
+	else
+	
+		if [ "$JAPAN_ORDER" = "yes" ] ; then
+			gs -dBATCH -dEPSFitPage -dNOPAUSE -sDEVICE=pdfwrite -sOutputFile=$FINAL_PDF $(ls -1 $TRANSFIGURATION_DIRECTORY/*.eps|tac)
+		else
+			gs -dBATCH -dEPSFitPage -dNOPAUSE -sDEVICE=pdfwrite -sOutputFile=$FINAL_PDF "$TRANSFIGURATION_DIRECTORY"/*.eps
+		fi
+	fi
+}
+
+_clean_process()
+{
+	echo "Cleaning working area $TRANSFIGURATION_DIRECTORY"
+	rm -rf "$TRANSFIGURATION_DIRECTORY"
+}
+
+
+if [ $#  -eq 0 ]; then 
+	_usage
+fi
+
+_sanity_checks
+
+case "$1" in
+	--book)
+	shift
+	_booklet "$1"
+	_clean_booklet
+	;;
+	--target)
+	shift
+	FINAL_PDF="$1"
+	shift
+	if [ "$1" = "--japan-order" ] ; then
+		JAPAN_ORDER="yes"
+		shift
+	fi
+	if [ "$1" = "--use-the-force" ] ; then
+		USE_THE_FORCE="yes"
+		shift
+	fi
+	shift
+	_process_images $@
+	_process_directory
+	_clean_process
+	;;
+	*)
+	_usage
+	;;
+esac
+
+# Main 
+exit 0
+ 
