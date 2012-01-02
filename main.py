@@ -36,5 +36,6 @@ for i in range(0,contador+1):
 	print (lista)
 '''	
 parser = argparse.ArgumentParser(prog="imagetobook",description="This a tool for convert images in book for print")
-parser.add_argument('integer',type=int,nargs='+',help="test")
+parser.add_argument('--orientation',nargs=1,help="Orientation for read book",choices=('oriental','occidental'),default="occidental",required=True)
+parser.add_argument('--dimension',nargs=1,help="Dimensions of paper",default="a4")
 args = parser.parse_args()
