@@ -1,0 +1,20 @@
+#!/bin/bash
+PAR="0"
+NOMBRE=0
+mkdir "definitivo"
+while read fichero; do
+	if [ $PAR = "0" ]; then
+		PAR="1"
+		convert -resize "x4956" $fichero redimensionado1.png
+		convert -density "600" -units "pixelsperinch" redimensionado1.png rescalado1.png
+		convert -rotate "-90<" rescalado1.png rotado1.png
+	else
+		PAR="0"
+		convert -resize "x4956" $fichero redimensionado2.png
+		convert -density "600" -units "pixelsperinch" redimensionado2.png rescalado2.png
+		convert -rotate "-90<" rescalado2.png rotado2.png
+		convert -append rotado1.png rotado2.png "definitivo/salida$NOMBRE.png"
+		NOMBRE=$(( NOMBRE + 1))
+	fi
+	echo "$fichero Listo"
+done < /home/kbut/orden
