@@ -37,7 +37,7 @@ for i in range(0,contador+1):
 '''
 def get_order(orientation,pages,list_files):
     list_files.sort()
-    ordered_list = []
+    ordered_list = {"blank":0,"order":[]}
     order = 1
     if orientation == "oriental":
         order = 0
@@ -51,18 +51,15 @@ def get_order(orientation,pages,list_files):
         if len(part_of_list) != pages:
             for aux in range(0,pages-len(part_of_list)):
                 part_of_list.append("")
+                ordered_list["blank"] += 1
         middle = int(pages / 2)
         for j in range(0,middle):
             if j % 2 == order:
-                aux = []
-                aux.append(part_of_list[pages - j - 1])
-                aux.append(part_of_list[j])
-                ordered_list.append(aux)
+                ordered_list["order"].append(part_of_list[pages - j - 1])
+                ordered_list["order"].append(part_of_list[j])
             else:
-                aux = []
-                aux.append(part_of_list[j])
-                aux.append(part_of_list[pages - j - 1])
-                ordered_list.append(aux)
+                ordered_list["order"].append(part_of_list[j])
+                ordered_list["order"].append(part_of_list[pages - j - 1])
     return ordered_list
 
 def main():
@@ -71,10 +68,20 @@ def main():
     parser.add_argument('--dimension',nargs=1,help="Dimensions of paper",default="a4")
     parser.add_argument('--pages',metavar="N",help="number of pages per book",required=True)
     parser.add_argument('--quality',nargs=1,help="Quality of output document",default="300")
+    parser.add_argument('action',nargs=1,help="Select action to do",choices={"test","convert"})
     parser.add_argument('path',nargs=1,help="Files path to convert")
     args = parser.parse_args()
-    order_list_files = get_order(args.orientation[0],int(args.pages),os.listdir(args.path[0]))
-    print order_list_files
+    
+    if args.action[0] == "test":
+        order_list_files = get_order(args.orientation[0],int(args.pages),os.listdir(args.path[0]))
+        print ("\nRESUME\n*********")
+        print ("Blank pages : " + str(order_list_files['blank']))
+        print ("\nOrder list :")
+        print ("*************")
+        print(" ".join(order_list_files['order']))
+    elif args.action[0] == "convert":
+        order_list_files = get_order(args.orientation[0],int(args.pages),os.listdir(args.path[0]))
+        
 
 
 
