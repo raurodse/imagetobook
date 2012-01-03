@@ -34,8 +34,52 @@ for i in range(0,contador+1):
 			lista.append(miniarray[indice])
 			lista.append(miniarray[len(miniarray) - indice - 1])
 	print (lista)
-'''	
-parser = argparse.ArgumentParser(prog="imagetobook",description="This a tool for convert images in book for print")
-parser.add_argument('--orientation',nargs=1,help="Orientation for read book",choices=('oriental','occidental'),default="occidental",required=True)
-parser.add_argument('--dimension',nargs=1,help="Dimensions of paper",default="a4")
-args = parser.parse_args()
+'''
+def get_order(orientation,pages,list_files):
+    list_files.sort()
+    ordered_list = []
+    order = 1
+    if orientation == "oriental":
+        order = 0
+    counter = int(len(list_files) / pages)
+    for i in range(0,counter + 1):
+        min_index = ( i * pages )
+        max_index = (min_index + pages)
+        if max_index > len(list_files):
+            max_index = len(list_files)
+        part_of_list = list_files[min_index:max_index]
+        if len(part_of_list) != pages:
+            for aux in range(0,pages-len(part_of_list)):
+                part_of_list.append("")
+        middle = int(pages / 2)
+        for j in range(0,middle):
+            if j % 2 == order:
+                aux = []
+                aux.append(part_of_list[pages - j - 1])
+                aux.append(part_of_list[j])
+                ordered_list.append(aux)
+            else:
+                aux = []
+                aux.append(part_of_list[j])
+                aux.append(part_of_list[pages - j - 1])
+                ordered_list.append(aux)
+    return ordered_list
+
+def main():
+    parser = argparse.ArgumentParser(prog="imagetobook",description="This a tool for convert images in book for print")
+    parser.add_argument('--orientation',nargs=1,help="Orientation for read book",choices=('oriental','occidental'),required=True)
+    parser.add_argument('--dimension',nargs=1,help="Dimensions of paper",default="a4")
+    parser.add_argument('--pages',metavar="N",help="number of pages per book",required=True)
+    parser.add_argument('--quality',nargs=1,help="Quality of output document",default="300")
+    parser.add_argument('path',nargs=1,help="Files path to convert")
+    args = parser.parse_args()
+    order_list_files = get_order(args.orientation[0],int(args.pages),os.listdir(args.path[0]))
+    print order_list_files
+
+
+
+if __name__ == '__main__':
+    main()
+
+
+
