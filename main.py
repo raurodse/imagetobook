@@ -2,39 +2,19 @@
 import sys
 import os
 import argparse
-'''Inch = 25.4
-cantidad , unidades = sys.argv[1].split(" ")
+import re
+import subprocess
 
-if ( unidades == "PixelsPerInch"):
-  print ((float(cantidad) / Inch)*210)
-else:
-  print ((float(cantidad) / 10)*210)
-'''
-'''a = (os.listdir(sys.argv[1]))
-paginas = int(sys.argv[2]) * 4
-a.sort()
-contador = int(len(a) / paginas)
-print(contador)
-for i in range(0,contador+1):
-	lista = []
-	minimo = (i * paginas)
-	maximo = minimo + paginas
-	if maximo > len(a):
-		maximo = len(a)
-	miniarray = a[minimo:maximo]
-	if len(miniarray) != paginas:
-		for aux in range(0,paginas-len(miniarray)):
-			miniarray.append("")
-	mitad = int(paginas / 2 )
-	for indice in range(0,mitad):
-		if indice % 2 == 0:
-			lista.append(miniarray[len(miniarray) - indice - 1])
-			lista.append(miniarray[indice])
-		else:
-			lista.append(miniarray[indice])
-			lista.append(miniarray[len(miniarray) - indice - 1])
-	print (lista)
-'''
+#
+# Global vars
+#
+Inch = 25.4
+
+#Function to get correct order to print pages
+#Return Dict {
+#                     blank: num of blank pages
+#                     order: order pages to print
+#                   }
 def get_order(orientation,pages,list_files):
     list_files.sort()
     ordered_list = {"blank":0,"order":[]}
@@ -62,26 +42,71 @@ def get_order(orientation,pages,list_files):
                 ordered_list["order"].append(part_of_list[pages - j - 1])
     return ordered_list
 
+#def get_order
+
+def test(args):
+    order_list_files = get_order(args.orientation[0],int(args.pages),os.listdir(args.path[0]))
+    print ("\nRESUME\n*********")
+    print ("Blank pages : " + str(order_list_files['blank']))
+    print ("\nOrder list :")
+    print ("*************")
+    print(" ".join(order_list_files['order']))
+#def test
+
+def convert(args):
+    order_list_files = get_order(args.orientation[0],int(args.pages),os.listdir(args.path[0]))
+    namepaperformat = "format"+ args.dimension[0]
+    formatfile = file("/home/kbut/imagetobook/dimensions",'r')
+    dimensionsnumbers = ""
+    for needle in formatfile.readlines():
+        if re.search(namepaperformat,needle):
+            aux =  needle.strip("\n").split("=")
+            if len(aux) == 2:
+                dimensionsnumbers = aux[1]
+            else:
+                dimensionsnumbers = ""
+    if dimensionsnumbers == "":
+        print "Dimension not supported"
+        exit(1)
+    x,y = dimensionsnumbers.split("x")
+    xpixel = args.quiality[0] * (x / Inch)
+    ypixel = args.quiality[0] * (y / Inch)
+
+#def convert
+
+def convertimage(name,x,y,quality,number):
+    subprocess.Popen(["convert","-resize","x"+x,name,"resize"+number+".png"])
+    subprocess.Popen(["convert","-density",quality,"resize"+number+".png","density"+number+".png"])
+    subprocess.Popen(["convert","-rotate","-90<"+x,"density"+number+".png","rotate"+number+".png"])
+    os.remove("resize"+number+".png")
+    os.remove("density"+number+".png")
+    return "rotate" + number+".png"
+        
+def joinimages(listnames,outputname):
+    command = []
+    command.append("convert")
+    command.append("-append")
+    for filename in listnames:
+        command.append(filename)
+    command.append(outputname)
+    subprocess.Popen(command)
+    
+
+    
 def main():
     parser = argparse.ArgumentParser(prog="imagetobook",description="This a tool for convert images in book for print")
     parser.add_argument('--orientation',nargs=1,help="Orientation for read book",choices=('oriental','occidental'),required=True)
-    parser.add_argument('--dimension',nargs=1,help="Dimensions of paper",default="a4")
+    parser.add_argument('--dimension',nargs=1,help="Dimensions of paper",default=["a4"])
     parser.add_argument('--pages',metavar="N",help="number of pages per book",required=True)
-    parser.add_argument('--quality',nargs=1,help="Quality of output document",default="300")
-    parser.add_argument('action',nargs=1,help="Select action to do",choices={"test","convert"})
+    parser.add_argument('--quality',nargs=1,help="Quality of output document",default=["300"])
+    parser.add_argument('action',nargs=1,help="Select action to do",choices=("test","convert"))
     parser.add_argument('path',nargs=1,help="Files path to convert")
     args = parser.parse_args()
     
     if args.action[0] == "test":
-        order_list_files = get_order(args.orientation[0],int(args.pages),os.listdir(args.path[0]))
-        print ("\nRESUME\n*********")
-        print ("Blank pages : " + str(order_list_files['blank']))
-        print ("\nOrder list :")
-        print ("*************")
-        print(" ".join(order_list_files['order']))
+        test(args)
     elif args.action[0] == "convert":
-        order_list_files = get_order(args.orientation[0],int(args.pages),os.listdir(args.path[0]))
-        
+        convert(args)
 
 
 
